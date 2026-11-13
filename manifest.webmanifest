@@ -1,0 +1,11 @@
+{
+  "name": "Rave Generator 2 — Studio Niko",
+  "short_name": "Rave Generator 2",
+  "description": "Groovebox 909, synthé acid, séquenceur, mixage et export audio.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0c0f",
+  "theme_color": "#101115",
+  "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
