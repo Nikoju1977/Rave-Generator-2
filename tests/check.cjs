@@ -15,5 +15,6 @@ assert(script.includes("return new Uint8Array(bytes)"),'WAV PCM encoder present'
 assert(script.includes("new OfflineAudioContext(2"),'True stereo offline render');
 assert(script.includes("44+frames*4"),'Live capture WAV PCM encoder present');
 const sw=fs.readFileSync(path.join(__dirname,'..','sw.js'),'utf8');
-assert(sw.includes('rave-generator-2-v'),'PWA cache is versioned');
+const cache=sw.match(/const CACHE=['"]([^'"]+)['"]/);
+assert(cache&&/^rave-generator-2-[a-z0-9-]+$/.test(cache[1]),'PWA cache is versioned');
 console.log('PASS Rave Generator 2: UI controls, script syntax, safe import and WAV engines');
