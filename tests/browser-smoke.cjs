@@ -3,7 +3,19 @@
 const assert=require('node:assert/strict');
 const {spawn,execFileSync}=require('node:child_process');
 const {readFile,mkdtemp,rm}=require('node:fs/promises');
-const os=require('node:os'),path=require('node:path');
+const os=require('node:os'),path=require('node:path'),http=require('node:http');
+function readHttp(url){
+ return new Promise((resolve,reject)=>{
+  http.get(url,response=>{
+   let content='';response.setEncoding('utf8');
+   response.on('data',chunk=>content+=chunk);
+   response.on('end',()=>{
+    try{resolve({status:response.statusCode,text:content})}catch(error){reject(error)}
+   });
+   response.on('error',reject);
+  }).on('error',reject);
+ });
+}
 const port=19865,base='http://127.0.0.1:'+port;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function poll(fn,label,timeout=30000){
@@ -24,13 +36,13 @@ async function main(){
  try{
   server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1','--directory','.'],{stdio:['ignore','ignore','pipe']});
   server.stderr.on('data',x=>stderr+=String(x).slice(-300));
-  await poll(async()=>(await fetch(base+'/')).status===200,'site server');
+  await poll(async()=>(await readHttp(base+'/')).status===200,'site server');
   chrome=spawn(browserBin(),['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
    '--no-first-run','--disable-background-networking','--autoplay-policy=no-user-gesture-required',
    '--remote-debugging-port=0','--remote-allow-origins=*','--user-data-dir='+path.join(tmp,'profile'),'about:blank'],{stdio:['ignore','ignore','pipe']});
   chrome.stderr.on('data',x=>stderr+=String(x).slice(-300));
   const portDev=await poll(async()=>Number((await readFile(path.join(tmp,'profile','DevToolsActivePort'),'utf8')).split('\n')[0]),'Chromium DevTools');
-  const tabs=await(await fetch('http://127.0.0.1:'+portDev+'/json/list')).json();
+  const tabs=JSON.parse((await readHttp('http://127.0.0.1:'+portDev+'/json/list')).text);
   const page=tabs.find(x=>x.type==='page');assert.ok(page?.webSocketDebuggerUrl,'Chrome page missing');
   ws=new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((resolve,reject)=>{ws.addEventListener('open',resolve,{once:true});ws.addEventListener('error',reject,{once:true});});
