@@ -345,7 +345,46 @@ function fileDataUrl(file){return new Promise((resolve,reject)=>{const reader=ne
 async function decodeDataUrl(data){const resp=await fetch(data);const buf=await resp.arrayBuffer();await initAudio();return await liveCtx.decodeAudioData(buf)}
 async function importSample(file){if(!file)return;if(file.size>15*1024*1024){toast('Sample refusé : taille supérieure à 15 Mo.',true);return}const target=state.selectedTrack;if(target===11){toast('L’import de sample concerne les 11 voix de batterie ; la basse est synthétisée.',true);return}try{const data=await fileDataUrl(file),buffer=await decodeDataUrl(data);customSamples[target]={name:file.name,buffer,data};renderSound();toast('Sample chargé sur '+TRACKS[target].short+' · '+buffer.duration.toFixed(2)+' s');safeSave()}catch(e){toast('Sample incompatible : '+e.message,true)}}
 async function exportProject(){const samples={};for(const [i,s] of Object.entries(customSamples))samples[i]={name:s.name,data:s.data};const project={...state,createdAt:new Date().toISOString(),samples};download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),`Rave-Generator-2-project-${Date.now()}.json`);toast('Projet JSON exporté'+(Object.keys(samples).length?' avec samples inclus':''))}
-async function importProject(file){if(!file)return;try{if(file.size>125*1024*1024)throw Error('Fichier trop volumineux');const data=JSON.parse(await file.text()),validated=validateProject(data);stop();state=validated;customSamples={};if(data.samples&&typeof data.samples==='object'){for(const [key,s] of Object.entries(data.samples)){const i=Number(key);if(i>=0&&i<11&&typeof s?.data==='string'&&s.data.startsWith('data:')&&s.data.length<28e6){try{customSamples[i]={name:String(s.name||'sample'),data:s.data,buffer:await decodeDataUrl(s.data)}}catch(e){console.warn('Sample importé illisible',key,e)}}}}syncUI();syncLiveParams();safeSave();toast('Projet chargé : patterns, mixage, arrangement'+(Object.keys(customSamples).length?' et samples':''))}catch(e){toast('Projet illisible : '+e.message,true)}}
+let projectImportBusy=false;
+async function importProject(file){
+ if(!file||projectImportBusy)return;
+ projectImportBusy=true;$('importProjectBtn').disabled=true;
+ try{
+  if(file.size>125*1024*1024)throw Error('Fichier trop volumineux (125 Mo maximum)');
+  const data=JSON.parse(await file.text()),validated=validateProject(data);
+  if(data.samples!==undefined&&(!data.samples||typeof data.samples!=='object'||Array.isArray(data.samples)))
+   throw Error('Table des samples incompatible');
+  const incomingSamples=Object.entries(data.samples||{});
+  if(incomingSamples.length>11)throw Error('Plus de 11 samples dans le projet');
+  for(const [key,sample]of incomingSamples){
+   const i=Number(key);
+   if(!Number.isInteger(i)||i<0||i>10||!sample||typeof sample!=='object'||
+      typeof sample.data!=='string'||!sample.data.startsWith('data:')||
+      sample.data.length>=28e6)throw Error('Sample invalide à la piste '+key);
+  }
+  const summary='Tempo '+validated.bpm+' BPM · '+incomingSamples.length+' sample(s)';
+  if(!confirm('Remplacer les patterns, le mixage et les samples du projet actuel ?\n'+summary+'\nExportez votre projet actuel en JSON si vous souhaitez le conserver.')){
+   toast('Import annulé : projet actuel conservé.');return;
+  }
+  // Préparer les samples sans toucher au projet et aux buffers audio actuels.
+  // Si un fichier est illisible, refuser l'ensemble plutôt que perdre les anciens samples.
+  const nextSamples={};
+  for(const [key,sample]of incomingSamples){
+   try{
+    nextSamples[Number(key)]={
+     name:String(sample.name||'sample').slice(0,180),
+     data:sample.data,
+     buffer:await decodeDataUrl(sample.data)
+    };
+   }catch(error){throw Error('Décodage impossible du sample piste '+key+' : '+error.message);}
+  }
+  stop();
+  state=validated;customSamples=nextSamples;
+  syncUI();syncLiveParams();safeSave();
+  toast('Projet chargé : patterns, mixage, arrangement'+(incomingSamples.length?' et '+incomingSamples.length+' samples':''));
+ }catch(error){toast('Import refusé : '+error.message,true);}
+ finally{projectImportBusy=false;$('importProjectBtn').disabled=false;}
+}
 // ------------------ UI event wiring ------------------
 $('playBtn').addEventListener('click',play);$('stopBtn').addEventListener('click',stop);
 $('tapBtn').addEventListener('click',()=>{const now=performance.now();tapTimes=tapTimes.filter(t=>now-t<3000);tapTimes.push(now);if(tapTimes.length>=2){const iv=[];for(let i=1;i<tapTimes.length;i++)iv.push(tapTimes[i]-tapTimes[i-1]);const avg=iv.reduce((a,b)=>a+b,0)/iv.length;changeBpm(60000/avg)}});

@@ -39,3 +39,11 @@ Le fichier autonome `Rave-Generator-2.html` fonctionne également dans le naviga
 - Les téléchargements réels, le partage vers Suno et le comportement sur un téléphone Android physique n'ont pas été testés dans un navigateur réel associé à un appareil ou un compte Suno.
 
 **Marques :** logiciel indépendant de Roland, inspirations fonctionnelles et sonores uniquement.
+## Lot de fiabilisation du 22 novembre 2026 — restauration sans perte et WAV
+
+- L'import d'un projet JSON demande désormais une **confirmation explicite** avant de remplacer les patterns, réglages et samples. Un refus ne modifie pas le projet actuel.
+- Les éventuels samples joints sont intégralement préparés et décodés **avant** toute substitution des données ; en cas de sample corrompu, le projet actuel est conservé et l'import est refusé, plutôt que de perdre silencieusement les prises précédentes.
+- Le bouton d'import est désactivé pendant la préparation des samples pour empêcher deux imports concurrents.
+- La CI `tests/check.cjs` valide le code et la présence des protections. `tests/browser-smoke.cjs` vérifie dans Chromium une annulation d'import, une restauration et **le contenu PCM d'un rendu WAV stéréo 44,1 kHz, 16 bits avec signal non nul**.
+- Cette validation automatisée ne vaut ni essai sur iPhone/Android physique ni garantie d'enregistrement temps réel, de partage Suno ou de qualité sonore professionnelle.
+

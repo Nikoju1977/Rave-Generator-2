@@ -1,0 +1,21 @@
+name: Rave Generator 2 - PCM WAV et restauration
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate JS, import consent and PCM engines
+        run: node tests/check.cjs
+      - name: Render real stereo WAV in headless Chromium
+        run: node tests/browser-smoke.cjs
