@@ -10,7 +10,24 @@ Une groovebox de création rave et acid : 11 percussions synthétisées, une bas
 
 [English overview](#english-overview) · [Démarrage rapide](#quickstart--démarrage-rapide) · [Issues](https://github.com/Nikoju1977/Rave-Generator-2/issues)
 
-> [Insérer ici un GIF de démonstration / Insert demo GIF here]
+> **À essayer en premier :** programmer un groove acid, enregistrer le master avec REC WAV puis comparer le fichier obtenu avec un EXPORT WAV hors ligne. Aucun compte externe n'est nécessaire pour ces deux opérations.
+
+## Parcours de validation reproductible / Reproducible audio check
+
+Procédure proposée, **non exécutée pour cette révision**. Relever le navigateur, l'OS, la fréquence d'échantillonnage et la version Git avant chaque essai.
+
+| Essai | Résultat attendu et preuve à conserver |
+| --- | --- |
+| Transport | PLAY, changements de BPM et pattern A–H ; lecture audible, sans décrochage perceptible pendant l'essai |
+| Mixage | Tester mute/solo et panoramique ; vérifier séparément les canaux gauche/droit |
+| REC WAV | Enregistrer 20 s ; fichier RIFF/WAVE stéréo PCM 16 bits, fréquence du contexte audio |
+| EXPORT WAV | Exporter 4 mesures ; fichier PCM stéréo 44,1 kHz/16 bits avec signal non nul |
+| Sauvegarde | Exporter JSON, modifier le pattern, restaurer après confirmation ; vérifier le retour à l'état initial |
+| Import défectueux | Charger un JSON invalide ; vérifier que le projet précédent reste intact |
+
+Les deux WAV ne sont pas nécessairement identiques échantillon par échantillon : la capture en direct et le rendu hors ligne utilisent des chemins distincts. La présence d'un signal non nul ne démontre pas l'absence de distorsion ou de coupures. Ne pas assimiler le format PCM 16 bits à un mastering certifié.
+
+**English:** Record a short live master WAV and render a separate offline WAV; check their headers, channel balance, duration and audible continuity. Keep the browser/device and commit details with the results. This is a proposed manual checklist, not a new test report.
 
 ## Pourquoi ce projet ?
 
